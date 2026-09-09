@@ -17,7 +17,7 @@
 (() => {
     "use strict";
 
-    const VERSION = "0.5.1";
+    const VERSION = "0.5.2";
     const STORAGE_KEY = "yt-ai-score-cache-v1";
     const SETTINGS_KEY = "yt-ai-score-settings-v1";
     const LEXICON_CACHE_KEY = "yt-ai-score-lexicon-v1";
