@@ -1,11 +1,40 @@
 # cafe — YT filter + léxico BR
 
-- `yt-filter.js` — userscript Tampermonkey (YouTube AI/AUTO/CLICK scores, DOM-only).
+- `yt-filter.user.js` — userscript Tampermonkey (YouTube AI/AUTO/CLICK scores, DOM-only).
 - `scripts/mine_br_lexicon.py` — minera léxicos PT-BR das seeds e exporta
   `data/<kind>_br.parquet` (tabela completa) + `data/<kind>_br.json` (compacto p/ HTTP),
   com `kind` em `clickbait|ai|automation`.
 - `data/seeds/` — corpus curado: `clickbait_br.txt`, `ai_br.txt`, `automation_br.txt`
   vs `neutral_br.txt` (estenda aqui e rode de novo).
+
+## Instalação (Tampermonkey, 1 clique)
+
+> Vale após o push deste repo para `darocaecobr/lexico-filter` no GitHub.
+
+1. Instale o Tampermonkey
+   ([Chrome](https://chromewebstore.google.com/detail/tampermonkey/dhdgffkkebhmkfjojejmpbldmpobfkfo) ·
+   [Firefox](https://addons.mozilla.org/firefox/addon/tampermonkey/) ·
+   Edge: busque "Tampermonkey" na loja de complementos).
+2. Clique para instalar:
+   **[yt-filter.user.js](https://raw.githubusercontent.com/darocaecobr/lexico-filter/refs/heads/main/yt-filter.user.js)**
+   → **Instalar** na tela do Tampermonkey.
+   (A extensão `.user.js` é o que faz o navegador oferecer a instalação direta.)
+3. Abra <https://www.youtube.com> → botão **YTAI ⚙** no canto inferior direito
+   abre o painel.
+
+## Configuração (padrões já vêm prontos)
+
+- **Tolerância**: 3 sliders em % (IA, Automação, Clickbait). Oculta vídeos cuja
+  probabilidade **passa** do valor; 100% = desligado. Abaixo, o contador
+  `X ocultos de Y avaliados` mostra o efeito ao vivo.
+- **Visibilidade**: mostra/oculta os selos IA, automação e BAIT nos cards.
+- **Léxicos remotos**: as 3 URLs já apontam para este repo (raw do GitHub);
+  **Atualizar léxicos ao iniciar** vem ligado; **Recarregar léxicos** força o
+  download. Sem internet, vale o cache local; sem URL, vale o léxico embutido.
+- **Resetar padrões** restaura tudo.
+
+Quem instalou as versões locais antigas (`local.example`): reinstale uma vez
+pelo link acima (a identidade do script mudou para o repo).
 
 ## Mineracao
 
@@ -35,7 +64,7 @@ Agarwal/SEPS, CollATe).
 
 ## Updates
 
-- **Script**: `yt-filter.js` declara `@updateURL`/`@downloadURL` para
+- **Script**: `yt-filter.user.js` declara `@updateURL`/`@downloadURL` para
   `darocaecobr/lexico-filter` — o Tampermonkey verifica e oferece a nova versão
   sozinho (basta subir o arquivo com `@version` maior). Reinstale a partir da URL
   raw uma vez para o TM registrar a origem de update.

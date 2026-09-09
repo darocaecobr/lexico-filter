@@ -7,8 +7,8 @@
 // @version      0.6.2
 // @description  Adds local heuristic AI/AUTOMATION/CLICKBAIT scores to YouTube video cards using only DOM metadata.
 // @match        https://www.youtube.com/*
-// @updateURL    https://raw.githubusercontent.com/darocaecobr/lexico-filter/refs/heads/main/yt-filter.js
-// @downloadURL  https://raw.githubusercontent.com/darocaecobr/lexico-filter/refs/heads/main/yt-filter.js
+// @updateURL    https://raw.githubusercontent.com/darocaecobr/lexico-filter/refs/heads/main/yt-filter.user.js
+// @downloadURL  https://raw.githubusercontent.com/darocaecobr/lexico-filter/refs/heads/main/yt-filter.user.js
 // @grant        GM_addStyle
 // @grant        GM_registerMenuCommand
 // @run-at       document-idle
