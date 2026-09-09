@@ -1,0 +1,12 @@
+[project]
+name = "cafe-br-lexicon"
+version = "0.1.0"
+description = "Mineracao de lexico clickbait PT-BR para o userscript yt-filter.js"
+requires-python = ">=3.12"
+dependencies = [
+    "pandas>=2.2",
+    "pyarrow>=15",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
