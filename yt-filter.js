@@ -1,6 +1,9 @@
 // ==UserScript==
 // @name         YouTube AI Score — DOM only
-// @namespace    https://local.example/youtube-ai-score
+// @namespace    https://github.com/darocaecobr/lexico-filter
+// @author       darocaecobr
+// @homepageURL  https://github.com/darocaecobr/lexico-filter
+// @supportURL   https://github.com/darocaecobr/lexico-filter/issues
 // @version      0.5.1
 // @description  Adds local heuristic AI/AUTOMATION/CLICKBAIT scores to YouTube video cards using only DOM metadata.
 // @match        https://www.youtube.com/*
