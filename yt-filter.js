@@ -4,7 +4,7 @@
 // @author       darocaecobr
 // @homepageURL  https://github.com/darocaecobr/lexico-filter
 // @supportURL   https://github.com/darocaecobr/lexico-filter/issues
-// @version      0.6.0
+// @version      0.6.1
 // @description  Adds local heuristic AI/AUTOMATION/CLICKBAIT scores to YouTube video cards using only DOM metadata.
 // @match        https://www.youtube.com/*
 // @updateURL    https://raw.githubusercontent.com/darocaecobr/lexico-filter/refs/heads/main/yt-filter.js
@@ -17,7 +17,7 @@
 (() => {
     "use strict";
 
-    const VERSION = "0.6.0";
+    const VERSION = "0.6.1";
     const STORAGE_KEY = "yt-ai-score-cache-v2";
     const SETTINGS_KEY = "yt-ai-score-settings-v2";
     const LEXICON_CACHE_KEY = "yt-ai-score-lexicon-v1";
@@ -1253,7 +1253,7 @@
         header.innerHTML = "<strong>YT AI Score — thresholds</strong><span>v" + VERSION + "</span>";
         panel.appendChild(header);
 
-        sectionTitle(panel, "Filtro");
+        sectionTitle(panel, "Tolerância");
         sliderRow(panel, { key: "minimumScoreToShow", label: "AI Ocultar por Score", min: 0, max: 1, step: 0.05, percent: true });
         sliderRow(panel, { key: "minimumAutomationToShow", label: "Automação Ocultar por Score", min: 0, max: 1, step: 0.05, percent: true });
         sliderRow(panel, { key: "minimumClickbaitToShow", label: "Clickbait Ocultar por Score", min: 0, max: 1, step: 0.05, percent: true });
