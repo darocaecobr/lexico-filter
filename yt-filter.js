@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         YouTube AI Score — DOM only
 // @namespace    https://local.example/youtube-ai-score
-// @version      0.4.0
+// @version      0.5.0
 // @description  Adds local heuristic AI/AUTOMATION/CLICKBAIT scores to YouTube video cards using only DOM metadata.
 // @match        https://www.youtube.com/*
 // @grant        GM_addStyle
@@ -12,7 +12,7 @@
 (() => {
     "use strict";
 
-    const VERSION = "0.4.0";
+    const VERSION = "0.5.0";
     const STORAGE_KEY = "yt-ai-score-cache-v1";
     const SETTINGS_KEY = "yt-ai-score-settings-v1";
     const LEXICON_CACHE_KEY = "yt-ai-score-lexicon-v1";
@@ -39,10 +39,16 @@
         // Clickbait
         clickbaitPointsNeeded: 3,
         longTitleLen: 100,
-        // Léxico remoto minerado (data/br_clickbait_lexicon.json via HTTP)
-        lexiconUrl: "",
+        // Léxicos remotos minerados (data/<kind>_br.json via HTTP)
+        lexiconClickbaitUrl: "",
+        lexiconAiUrl: "",
+        lexiconAutomationUrl: "",
         remoteWeight: 0.50,
         remoteCap: 0.40,
+        aiRemoteWeight: 0.50,
+        aiRemoteCap: 0.40,
+        autoRemoteWeight: 0.50,
+        autoRemoteCap: 0.40,
     };
 
     const CONFIG = loadSettings();
@@ -96,7 +102,9 @@
                 "titleWeight", "titleCap", "channelWeight",
                 "channelCap", "bodyWeight", "bodyCap",
                 "automationPerMatch", "automationBonus",
-                "remoteWeight", "remoteCap"
+                "remoteWeight", "remoteCap",
+                "aiRemoteWeight", "aiRemoteCap",
+                "autoRemoteWeight", "autoRemoteCap"
             ]) {
                 let value = Number(merged[key]);
 
@@ -122,10 +130,21 @@
             merged.showAutomation = merged.showAutomation !== false;
             merged.showClickbait = merged.showClickbait !== false;
 
-            // URL do léxico remoto (raw do git). Vazia = só léxico embutido.
-            merged.lexiconUrl = String(merged.lexiconUrl || "").trim();
-            if (merged.lexiconUrl && !/^https?:\/\//i.test(merged.lexiconUrl)) {
-                merged.lexiconUrl = DEFAULTS.lexiconUrl;
+            // URLs dos léxicos remotos (raw do git). Vazias = só embutido.
+            // Migra config v0.4 (lexiconUrl único) p/ clickbait.
+            if (!merged.lexiconClickbaitUrl && merged.lexiconUrl) {
+                merged.lexiconClickbaitUrl = merged.lexiconUrl;
+            }
+            delete merged.lexiconUrl;
+
+            for (const key of [
+                "lexiconClickbaitUrl", "lexiconAiUrl", "lexiconAutomationUrl"
+            ]) {
+                merged[key] = String(merged[key] || "").trim();
+
+                if (merged[key] && !/^https?:\/\//i.test(merged[key])) {
+                    merged[key] = "";
+                }
             }
 
             if (!(merged.lowThreshold < merged.mediumThreshold &&
@@ -160,51 +179,91 @@
     }
 
     /*
-     * Léxico remoto: JSON gerado por scripts/mine_br_lexicon.py
-     * ({version, phrases: [{t, s}]}) hospedado no git e obtido
+     * Léxicos remotos: JSON gerado por scripts/mine_br_lexicon.py
+     * ({version, kind, phrases: [{t, s}]}) hospedado no git e obtido
      * via HTTP (ex. URL raw.githubusercontent.com). O cache em
      * localStorage garante funcionamento offline; sem URL
-     * configurada, usa só o léxico embutido no script.
+     * configurada, cada dimensão usa só o léxico embutido.
+     * Fontes das seeds: clickbait (YTClickbait21K/BaitBuster/MVD/
+     * BollyBAIT), IA (teses deepfake UNICAMP/UTFPR/UFPR + nomes de
+     * ferramentas T2V dos papers VID-AID/GenVideo/GenBuster) e
+     * automação (Alliance4Europe "Infinite Slop Machine", YouTube
+     * purga 2026 de content farms, Agarwal/SEPS, CollATe).
      */
-    const lexiconState = {
-        phrases: [],
-        version: null,
-        status: "embutido",
+    const LEXICON_KINDS = ["clickbait", "ai", "automation"];
+
+    const lexicons = {
+        clickbait: { phrases: [], version: null, status: "embutido" },
+        ai: { phrases: [], version: null, status: "embutido" },
+        automation: { phrases: [], version: null, status: "embutido" },
     };
 
+    function lexiconUrlKey(kind) {
+        return `lexicon${kind[0].toUpperCase()}${kind.slice(1)}Url`;
+    }
+
+    function cleanPhrases(entries) {
+        return (entries || [])
+            .filter(entry => typeof entry?.t === "string" && entry.t.trim())
+            .map(entry => ({
+                t: entry.t,
+                s: Math.max(0, Math.min(1, Number(entry.s) || 0)),
+            }));
+    }
+
     function loadLexiconCache() {
+        let parsed = null;
+
         try {
             const raw = localStorage.getItem(LEXICON_CACHE_KEY);
-            if (!raw) {
-                return;
-            }
-
-            const parsed = JSON.parse(raw);
-
-            if (Array.isArray(parsed?.phrases)) {
-                lexiconState.phrases = parsed.phrases
-                    .filter(entry => typeof entry?.t === "string")
-                    .map(entry => ({
-                        t: entry.t,
-                        s: Math.max(0, Math.min(1, Number(entry.s) || 0)),
-                    }));
-                lexiconState.version = parsed.version || null;
-                lexiconState.status =
-                    `cache ${lexiconState.version || "?"} (${lexiconState.phrases.length})`;
-            }
+            parsed = raw ? JSON.parse(raw) : null;
         } catch {
-            // Mantém léxico embutido.
+            parsed = null;
+        }
+
+        // Migra cache antigo (formato v0.4: {version, phrases}) p/ clickbait.
+        if (parsed && Array.isArray(parsed.phrases) && !parsed.clickbait) {
+            parsed = { clickbait: parsed };
+        }
+
+        for (const kind of LEXICON_KINDS) {
+            const cached = parsed?.[kind];
+
+            if (cached && Array.isArray(cached.phrases)) {
+                lexicons[kind].phrases = cleanPhrases(cached.phrases);
+                lexicons[kind].version = cached.version || null;
+                lexicons[kind].status =
+                    `cache ${cached.version || "?"} (${lexicons[kind].phrases.length})`;
+            }
         }
     }
 
-    async function fetchRemoteLexicon() {
-        const url = CONFIG.lexiconUrl;
+    function saveLexiconCache() {
+        try {
+            const payload = {};
+
+            for (const kind of LEXICON_KINDS) {
+                payload[kind] = {
+                    version: lexicons[kind].version,
+                    phrases: lexicons[kind].phrases,
+                };
+            }
+
+            localStorage.setItem(LEXICON_CACHE_KEY, JSON.stringify(payload));
+        } catch {
+            // Cache opcional.
+        }
+    }
+
+    async function fetchOneLexicon(kind) {
+        const url = CONFIG[lexiconUrlKey(kind)];
 
         if (!url) {
-            return;
+            return false;
         }
 
-        lexiconState.status = "baixando…";
+        const state = lexicons[kind];
+        state.status = "baixando…";
         updateLexiconStatus();
 
         try {
@@ -220,54 +279,62 @@
                 throw new Error("JSON sem 'phrases'");
             }
 
-            lexiconState.phrases = payload.phrases
-                .filter(entry => typeof entry?.t === "string")
-                .map(entry => ({
-                    t: entry.t,
-                    s: Math.max(0, Math.min(1, Number(entry.s) || 0)),
-                }));
-            lexiconState.version = payload.version || null;
-            lexiconState.status =
-                `remoto ${lexiconState.version || "?"} (${lexiconState.phrases.length})`;
-
-            try {
-                localStorage.setItem(
-                    LEXICON_CACHE_KEY,
-                    JSON.stringify({
-                        version: lexiconState.version,
-                        phrases: lexiconState.phrases,
-                    })
-                );
-            } catch {
-                // Cache opcional.
+            if (payload.kind && payload.kind !== kind) {
+                log(`lexicon kind mismatch: esperado ${kind}, veio ${payload.kind}`);
             }
 
+            state.phrases = cleanPhrases(payload.phrases);
+            state.version = payload.version || null;
+            state.status =
+                `remoto ${state.version || "?"} (${state.phrases.length})`;
+
+            return true;
+        } catch (error) {
+            state.status = `falha: ${error?.message || error}`;
+            log(`lexicon ${kind} fetch failed`, error);
+
+            return false;
+        } finally {
+            updateLexiconStatus();
+        }
+    }
+
+    async function fetchRemoteLexicons() {
+        const results = await Promise.all(
+            LEXICON_KINDS.map(kind => fetchOneLexicon(kind))
+        );
+
+        if (results.some(Boolean)) {
+            saveLexiconCache();
             clearScoreCache();
             scan();
-        } catch (error) {
-            lexiconState.status = `falha: ${error?.message || error}`;
-            log("lexicon fetch failed", error);
         }
 
         updateLexiconStatus();
     }
 
-    function matchRemotePhrases(text) {
-        if (!lexiconState.phrases.length) {
+    function matchLexicon(text, kind) {
+        const phrases = lexicons[kind]?.phrases;
+
+        if (!phrases?.length) {
             return [];
         }
 
         const value = lower(text);
 
-        return lexiconState.phrases.filter(
+        return phrases.filter(
             entry => entry.t && value.includes(entry.t.toLocaleLowerCase())
         );
     }
 
     function updateLexiconStatus() {
-        document.querySelector("#yt-ai-lexicon-status")?.replaceChildren(
-            document.createTextNode(lexiconState.status)
-        );
+        for (const kind of LEXICON_KINDS) {
+            document.querySelector(`#yt-ai-lexicon-status-${kind}`)?.replaceChildren(
+                document.createTextNode(
+                    `${kind}: ${lexicons[kind].status}`
+                )
+            );
+        }
     }
 
     function loadCache() {
@@ -497,9 +564,12 @@
                 automationScore * CONFIG.automationBonus;
         }
 
-        const remoteMatches = matchRemotePhrases(
-            `${metadata.title} ${metadata.channel}`
-        );
+        const haystack =
+            `${metadata.title} ${metadata.channel}`;
+
+        const remoteMatches = matchLexicon(haystack, "clickbait");
+        const remoteAiMatches = matchLexicon(haystack, "ai");
+        const remoteAutoMatches = matchLexicon(haystack, "automation");
 
         let clickbaitScore =
             calculateClickbait(
@@ -516,6 +586,28 @@
             clickbaitScore = Math.max(
                 0,
                 Math.min(1, clickbaitScore + remoteBonus)
+            );
+        }
+
+        if (remoteAiMatches.length) {
+            aiScore += Math.min(
+                CONFIG.aiRemoteCap,
+                remoteAiMatches.reduce((sum, entry) => sum + entry.s, 0) *
+                    CONFIG.aiRemoteWeight
+            );
+        }
+
+        if (remoteAutoMatches.length) {
+            automationScore = Math.max(
+                0,
+                Math.min(
+                    1,
+                    automationScore + Math.min(
+                        CONFIG.autoRemoteCap,
+                        remoteAutoMatches.reduce((sum, entry) => sum + entry.s, 0) *
+                            CONFIG.autoRemoteWeight
+                    )
+                )
             );
         }
 
@@ -538,6 +630,8 @@
                 bodyAI,
                 automation,
                 remote: remoteMatches.map(entry => entry.t),
+                remoteAI: remoteAiMatches.map(entry => entry.t),
+                remoteAuto: remoteAutoMatches.map(entry => entry.t),
             }
         };
     }
@@ -652,12 +746,24 @@
 
         if (scores.evidence.remote?.length) {
             lines.push(
-                `Léxico BR: ${scores.evidence.remote.slice(0, 5).join(", ")}`
+                `Léxico clickbait: ${scores.evidence.remote.slice(0, 5).join(", ")}`
+            );
+        }
+
+        if (scores.evidence.remoteAI?.length) {
+            lines.push(
+                `Léxico IA: ${scores.evidence.remoteAI.slice(0, 5).join(", ")}`
+            );
+        }
+
+        if (scores.evidence.remoteAuto?.length) {
+            lines.push(
+                `Léxico automação: ${scores.evidence.remoteAuto.slice(0, 5).join(", ")}`
             );
         }
 
         lines.push(
-            `LEXICO: ${lexiconState.version || "embutido"} (${lexiconState.status})`
+            `LEXICOS: click=${lexicons.clickbait.version || "emb"}(${lexicons.clickbait.phrases.length}) ai=${lexicons.ai.version || "emb"}(${lexicons.ai.phrases.length}) auto=${lexicons.automation.version || "emb"}(${lexicons.automation.phrases.length})`
         );
 
         lines.push(
@@ -1036,7 +1142,7 @@
         input.addEventListener("change", () => {
             CONFIG[key] = String(input.value || "").trim();
             saveSettings();
-            fetchRemoteLexicon();
+            fetchRemoteLexicons();
         });
 
         row.appendChild(name);
@@ -1091,33 +1197,54 @@
         intRow(panel, { key: "clickbaitPointsNeeded", label: "Pontos p/ 100%", min: 1, max: 6, step: 1 });
         intRow(panel, { key: "longTitleLen", label: "Título longo >", min: 40, max: 200, step: 10 });
 
-        sectionTitle(panel, "Léxico remoto (git via HTTP)");
+        sectionTitle(panel, "Léxicos remotos (git via HTTP)");
         urlRow(panel, {
-            key: "lexiconUrl",
-            label: "URL do JSON",
-            placeholder: "https://raw.githubusercontent.com/.../br_clickbait_lexicon.json",
+            key: "lexiconClickbaitUrl",
+            label: "URL clickbait (data/clickbait_br.json)",
+            placeholder: "https://raw.githubusercontent.com/.../clickbait_br.json",
         });
-        sliderRow(panel, { key: "remoteWeight", label: "Peso léxico remoto", min: 0, max: 1, step: 0.05 });
-        sliderRow(panel, { key: "remoteCap", label: "Teto léxico remoto", min: 0, max: 1, step: 0.05 });
+        urlRow(panel, {
+            key: "lexiconAiUrl",
+            label: "URL IA (data/ai_br.json)",
+            placeholder: "https://raw.githubusercontent.com/.../ai_br.json",
+        });
+        urlRow(panel, {
+            key: "lexiconAutomationUrl",
+            label: "URL automação (data/automation_br.json)",
+            placeholder: "https://raw.githubusercontent.com/.../automation_br.json",
+        });
+        sliderRow(panel, { key: "remoteWeight", label: "Peso léxico clickbait", min: 0, max: 1, step: 0.05 });
+        sliderRow(panel, { key: "remoteCap", label: "Teto léxico clickbait", min: 0, max: 1, step: 0.05 });
+        sliderRow(panel, { key: "aiRemoteWeight", label: "Peso léxico IA", min: 0, max: 1, step: 0.05 });
+        sliderRow(panel, { key: "aiRemoteCap", label: "Teto léxico IA", min: 0, max: 1, step: 0.05 });
+        sliderRow(panel, { key: "autoRemoteWeight", label: "Peso léxico automação", min: 0, max: 1, step: 0.05 });
+        sliderRow(panel, { key: "autoRemoteCap", label: "Teto léxico automação", min: 0, max: 1, step: 0.05 });
+
+        for (const kind of LEXICON_KINDS) {
+            const line = document.createElement("div");
+            line.className = "yt-ai-row-head";
+
+            const status = document.createElement("span");
+            status.id = `yt-ai-lexicon-status-${kind}`;
+            status.className = "yt-ai-val";
+            status.textContent = `${kind}: ${lexicons[kind].status}`;
+
+            line.appendChild(status);
+            panel.appendChild(line);
+        }
 
         const lexRow = document.createElement("div");
         lexRow.className = "yt-ai-row-head";
 
-        const lexStatus = document.createElement("span");
-        lexStatus.id = "yt-ai-lexicon-status";
-        lexStatus.className = "yt-ai-val";
-        lexStatus.textContent = lexiconState.status;
-
         const lexReload = document.createElement("button");
         lexReload.type = "button";
         lexReload.className = "yt-ai-mini";
-        lexReload.textContent = "Recarregar léxico";
+        lexReload.textContent = "Recarregar léxicos";
         lexReload.addEventListener("click", () => {
             saveSettings();
-            fetchRemoteLexicon();
+            fetchRemoteLexicons();
         });
 
-        lexRow.appendChild(lexStatus);
         lexRow.appendChild(lexReload);
         panel.appendChild(lexRow);
 
@@ -1149,7 +1276,7 @@
 
         const hint = document.createElement("div");
         hint.className = "yt-ai-hint";
-        hint.textContent = "Léxico BR: data/br_clickbait_lexicon.json (scripts/mine_br_lexicon.py). Cole a URL raw do git em 'URL do JSON' e clique Recarregar. Mudanças limpam o cache e reavaliam os cards.";
+        hint.textContent = "Léxicos BR: data/{clickbait,ai,automation}_br.json (scripts/mine_br_lexicon.py --kind ...). Cole as URLs raw do git acima e clique Recarregar. Mudanças limpam o cache e reavaliam os cards.";
         panel.appendChild(hint);
 
         document.body.appendChild(panel);
@@ -1456,8 +1583,8 @@
         loadLexiconCache();
         scan();
 
-        if (CONFIG.lexiconUrl) {
-            fetchRemoteLexicon();
+        if (CONFIG.lexiconClickbaitUrl || CONFIG.lexiconAiUrl || CONFIG.lexiconAutomationUrl) {
+            fetchRemoteLexicons();
         }
 
         observer.observe(

@@ -1,13 +1,15 @@
-"""Mineracao de lexico clickbait PT-BR.
+"""Mineracao de lexicos PT-BR (clickbait, IA, automacao).
 
-Le os corpus de seeds (clickbait vs neutro), calcula n-gramas
+Compara um corpus positivo contra o neutro, calcula n-gramas
 discriminativos via log-odds suavizado e exporta:
-  - data/br_clickbait_lexicon.parquet (tabela completa p/ analise)
-  - data/br_clickbait_lexicon.json   (compacto p/ o userscript via HTTP)
+  - data/<kind>_br.parquet (tabela completa p/ analise)
+  - data/<kind>_br.json     (compacto p/ o userscript via HTTP)
 
 Uso:
-    uv run scripts/mine_br_lexicon.py
-    uv run scripts/mine_br_lexicon.py --top-n 300 --min-df 2
+    uv run scripts/mine_br_lexicon.py --kind clickbait
+    uv run scripts/mine_br_lexicon.py --kind ai
+    uv run scripts/mine_br_lexicon.py --kind automation
+    uv run scripts/mine_br_lexicon.py --kind clickbait --top-n 300 --min-df 2
 """
 
 from __future__ import annotations
@@ -110,18 +112,23 @@ def mine(
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Minera lexico clickbait PT-BR")
-    parser.add_argument("--clickbait", default=str(SEEDS / "clickbait_br.txt"))
+    parser = argparse.ArgumentParser(description="Minera lexico PT-BR")
+    parser.add_argument("--kind", choices=["clickbait", "ai", "automation"],
+                        default="clickbait")
+    parser.add_argument("--positive", default=None,
+                        help="padrao: data/seeds/<kind>_br.txt")
     parser.add_argument("--neutral", default=str(SEEDS / "neutral_br.txt"))
-    parser.add_argument("--out-parquet", default=str(DATA / "br_clickbait_lexicon.parquet"))
-    parser.add_argument("--out-json", default=str(DATA / "br_clickbait_lexicon.json"))
+    parser.add_argument("--out-parquet", default=None)
+    parser.add_argument("--out-json", default=None)
     parser.add_argument("--top-n", type=int, default=250)
     parser.add_argument("--min-df", type=int, default=2)
     parser.add_argument("--min-log-odds", type=float, default=0.5)
     parser.add_argument("--version", default="1")
     args = parser.parse_args()
+    kind = args.kind
+    positive = Path(args.positive or str(SEEDS / f"{kind}_br.txt"))
 
-    cb_titles = load_titles(Path(args.clickbait))
+    cb_titles = load_titles(positive)
     nb_titles = load_titles(Path(args.neutral))
     if not cb_titles or not nb_titles:
         raise SystemExit("corpus vazio: verifique os arquivos de seeds")
@@ -132,21 +139,22 @@ def main() -> None:
 
     df = pd.DataFrame(rows, columns=["term", "n", "df_cb", "df_nb", "log_odds", "score"])
     df["lang"] = "pt-BR"
-    df["lexicon_version"] = f"br-v{args.version}"
-    out_parquet = Path(args.out_parquet)
+    df["lexicon_version"] = f"{kind}-br-v{args.version}"
+    out_parquet = Path(args.out_parquet or str(DATA / f"{kind}_br.parquet"))
     out_parquet.parent.mkdir(parents=True, exist_ok=True)
     df.to_parquet(out_parquet, index=False)
 
     top = rows[: args.top_n]
     payload = {
-        "version": f"br-v{args.version}",
+        "version": f"{kind}-br-v{args.version}",
+        "kind": kind,
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "lang": "pt-BR",
-        "source": "seeds BR locais (clickbait vs neutro)",
+        "source": f"seeds BR locais ({positive.name} vs neutro)",
         "count": len(top),
         "phrases": [{"t": r["term"], "s": r["score"]} for r in top],
     }
-    out_json = Path(args.out_json)
+    out_json = Path(args.out_json or str(DATA / f"{kind}_br.json"))
     out_json.write_text(json.dumps(payload, ensure_ascii=False, indent=1), encoding="utf-8")
 
     print(f"titles: cb={len(cb_titles)} nb={len(nb_titles)}")

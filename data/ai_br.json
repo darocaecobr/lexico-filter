@@ -1,0 +1,374 @@
+{
+ "version": "ai-br-v1",
+ "kind": "ai",
+ "generated_at": "2026-09-09T21:35:18.531650+00:00",
+ "lang": "pt-BR",
+ "source": "seeds BR locais (ai_br.txt vs neutro)",
+ "count": 91,
+ "phrases": [
+  {
+   "t": "ia",
+   "s": 0.691
+  },
+  {
+   "t": "por ia",
+   "s": 0.691
+  },
+  {
+   "t": "voz",
+   "s": 0.599
+  },
+  {
+   "t": "artificial",
+   "s": 0.536
+  },
+  {
+   "t": "inteligência",
+   "s": 0.536
+  },
+  {
+   "t": "inteligência artificial",
+   "s": 0.536
+  },
+  {
+   "t": "vídeo",
+   "s": 0.536
+  },
+  {
+   "t": "com ia",
+   "s": 0.497
+  },
+  {
+   "t": "avatar",
+   "s": 0.452
+  },
+  {
+   "t": "conteúdo",
+   "s": 0.452
+  },
+  {
+   "t": "feito",
+   "s": 0.452
+  },
+  {
+   "t": "sintético",
+   "s": 0.452
+  },
+  {
+   "t": "de ia",
+   "s": 0.396
+  },
+  {
+   "t": "5",
+   "s": 0.396
+  },
+  {
+   "t": "chatgpt",
+   "s": 0.396
+  },
+  {
+   "t": "chatgpt e",
+   "s": 0.396
+  },
+  {
+   "t": "com ia em",
+   "s": 0.396
+  },
+  {
+   "t": "criei",
+   "s": 0.396
+  },
+  {
+   "t": "feita",
+   "s": 0.396
+  },
+  {
+   "t": "gerado",
+   "s": 0.396
+  },
+  {
+   "t": "ia em",
+   "s": 0.396
+  },
+  {
+   "t": "narração",
+   "s": 0.396
+  },
+  {
+   "t": "por inteligência",
+   "s": 0.396
+  },
+  {
+   "t": "por inteligência artificial",
+   "s": 0.396
+  },
+  {
+   "t": "sora",
+   "s": 0.396
+  },
+  {
+   "t": "teste",
+   "s": 0.396
+  },
+  {
+   "t": "vs",
+   "s": 0.396
+  },
+  {
+   "t": "youtube",
+   "s": 0.396
+  },
+  {
+   "t": "1",
+   "s": 0.324
+  },
+  {
+   "t": "1 hora",
+   "s": 0.324
+  },
+  {
+   "t": "10",
+   "s": 0.324
+  },
+  {
+   "t": "100",
+   "s": 0.324
+  },
+  {
+   "t": "3",
+   "s": 0.324
+  },
+  {
+   "t": "a voz",
+   "s": 0.324
+  },
+  {
+   "t": "antiga",
+   "s": 0.324
+  },
+  {
+   "t": "avatar de",
+   "s": 0.324
+  },
+  {
+   "t": "avatar de ia",
+   "s": 0.324
+  },
+  {
+   "t": "clipe",
+   "s": 0.324
+  },
+  {
+   "t": "com chatgpt",
+   "s": 0.324
+  },
+  {
+   "t": "com chatgpt e",
+   "s": 0.324
+  },
+  {
+   "t": "com inteligência",
+   "s": 0.324
+  },
+  {
+   "t": "com inteligência artificial",
+   "s": 0.324
+  },
+  {
+   "t": "com sora",
+   "s": 0.324
+  },
+  {
+   "t": "comercial",
+   "s": 0.324
+  },
+  {
+   "t": "conteúdo sintético",
+   "s": 0.324
+  },
+  {
+   "t": "criada",
+   "s": 0.324
+  },
+  {
+   "t": "criei um",
+   "s": 0.324
+  },
+  {
+   "t": "curta",
+   "s": 0.324
+  },
+  {
+   "t": "diffusion",
+   "s": 0.324
+  },
+  {
+   "t": "do youtube",
+   "s": 0.324
+  },
+  {
+   "t": "elevenlabs",
+   "s": 0.324
+  },
+  {
+   "t": "em 5",
+   "s": 0.324
+  },
+  {
+   "t": "feito por",
+   "s": 0.324
+  },
+  {
+   "t": "ficou",
+   "s": 0.324
+  },
+  {
+   "t": "filme",
+   "s": 0.324
+  },
+  {
+   "t": "fiz",
+   "s": 0.324
+  },
+  {
+   "t": "foto",
+   "s": 0.324
+  },
+  {
+   "t": "gera",
+   "s": 0.324
+  },
+  {
+   "t": "gerada",
+   "s": 0.324
+  },
+  {
+   "t": "geradas",
+   "s": 0.324
+  },
+  {
+   "t": "geradas por",
+   "s": 0.324
+  },
+  {
+   "t": "gerado por",
+   "s": 0.324
+  },
+  {
+   "t": "heygen",
+   "s": 0.324
+  },
+  {
+   "t": "história",
+   "s": 0.324
+  },
+  {
+   "t": "honesto",
+   "s": 0.324
+  },
+  {
+   "t": "hora",
+   "s": 0.324
+  },
+  {
+   "t": "ia em 5",
+   "s": 0.324
+  },
+  {
+   "t": "meu",
+   "s": 0.324
+  },
+  {
+   "t": "midjourney",
+   "s": 0.324
+  },
+  {
+   "t": "música",
+   "s": 0.324
+  },
+  {
+   "t": "narração por",
+   "s": 0.324
+  },
+  {
+   "t": "narração por ia",
+   "s": 0.324
+  },
+  {
+   "t": "o resultado",
+   "s": 0.324
+  },
+  {
+   "t": "por ia no",
+   "s": 0.324
+  },
+  {
+   "t": "qual",
+   "s": 0.324
+  },
+  {
+   "t": "resultado",
+   "s": 0.324
+  },
+  {
+   "t": "roteiro",
+   "s": 0.324
+  },
+  {
+   "t": "runway",
+   "s": 0.324
+  },
+  {
+   "t": "selo",
+   "s": 0.324
+  },
+  {
+   "t": "selo de",
+   "s": 0.324
+  },
+  {
+   "t": "stable",
+   "s": 0.324
+  },
+  {
+   "t": "stable diffusion",
+   "s": 0.324
+  },
+  {
+   "t": "tutorial",
+   "s": 0.324
+  },
+  {
+   "t": "veo",
+   "s": 0.324
+  },
+  {
+   "t": "vinheta",
+   "s": 0.324
+  },
+  {
+   "t": "virtual",
+   "s": 0.324
+  },
+  {
+   "t": "voz de",
+   "s": 0.324
+  },
+  {
+   "t": "vídeos",
+   "s": 0.324
+  },
+  {
+   "t": "minutos",
+   "s": 0.223
+  },
+  {
+   "t": "ia no",
+   "s": 0.151
+  },
+  {
+   "t": "real",
+   "s": 0.151
+  }
+ ]
+}

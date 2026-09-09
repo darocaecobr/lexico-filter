@@ -1,8 +1,9 @@
 {
- "version": "br-v1",
- "generated_at": "2026-09-09T21:13:23.907077+00:00",
+ "version": "clickbait-br-v1",
+ "kind": "clickbait",
+ "generated_at": "2026-09-09T21:35:18.135237+00:00",
  "lang": "pt-BR",
- "source": "seeds BR locais (clickbait vs neutro)",
+ "source": "seeds BR locais (clickbait_br.txt vs neutro)",
  "count": 78,
  "phrases": [
   {
