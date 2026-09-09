@@ -4,7 +4,7 @@
 // @author       darocaecobr
 // @homepageURL  https://github.com/darocaecobr/lexico-filter
 // @supportURL   https://github.com/darocaecobr/lexico-filter/issues
-// @version      0.5.3
+// @version      0.6.0
 // @description  Adds local heuristic AI/AUTOMATION/CLICKBAIT scores to YouTube video cards using only DOM metadata.
 // @match        https://www.youtube.com/*
 // @updateURL    https://raw.githubusercontent.com/darocaecobr/lexico-filter/refs/heads/main/yt-filter.js
@@ -17,9 +17,9 @@
 (() => {
     "use strict";
 
-    const VERSION = "0.5.3";
-    const STORAGE_KEY = "yt-ai-score-cache-v1";
-    const SETTINGS_KEY = "yt-ai-score-settings-v1";
+    const VERSION = "0.6.0";
+    const STORAGE_KEY = "yt-ai-score-cache-v2";
+    const SETTINGS_KEY = "yt-ai-score-settings-v2";
     const LEXICON_CACHE_KEY = "yt-ai-score-lexicon-v1";
     const RESCAN_MS = 2500;
 
@@ -27,9 +27,9 @@
         showAI: true,
         showAutomation: true,
         showClickbait: true,
-        minimumScoreToShow: 0.00,
-        minimumAutomationToShow: 0.00,
-        minimumClickbaitToShow: 0.00,
+        minimumScoreToShow: 1.00,
+        minimumAutomationToShow: 1.00,
+        minimumClickbaitToShow: 1.00,
         cacheMaxEntries: 2000,
         // Faixas de cor dos badges
         lowThreshold: 0.20,
@@ -394,14 +394,18 @@
     }
 
     function extractVideoId(card) {
-        const anchors = card.querySelectorAll('a[href*="/watch?"]');
+        const anchors = card.querySelectorAll(
+            'a[href*="/watch?"], a[href*="/shorts/"]'
+        );
 
         for (const anchor of anchors) {
             try {
                 // anchor.href já é absoluto; sem base para não quebrar
                 // em origens opacas (ex. file://, origin "null").
                 const url = new URL(anchor.href);
-                const id = url.searchParams.get("v");
+                const id =
+                    url.searchParams.get("v") ||
+                    (/\/shorts\/([^/?#]+)/.exec(url.pathname) || [])[1];
 
                 if (id) {
                     return id;
@@ -432,7 +436,7 @@
         }
 
         const link = card.querySelector(
-            'a[href*="/watch?"][aria-label]'
+            'a[href*="/watch?"][aria-label], a[href*="/shorts/"][aria-label]'
         );
 
         return normalize(
@@ -861,7 +865,7 @@
                 name;
 
             badge.textContent =
-                `${name} ${Math.round(score * 100)}`;
+                `${name} ${Math.round(score * 100)}%`;
 
             badge.title =
                 buildTooltip(
@@ -904,20 +908,25 @@
             .querySelector(".yt-ai-score-wrapper")
             ?.remove();
 
-        // Card oculto quando ALGUMA dimensão fica abaixo do seu
-        // mínimo. Com os três mínimos em 0, nada é oculto.
-        // (Compatível com o filtro único de AI anterior.)
-        const passesAI =
-            scores.ai >= CONFIG.minimumScoreToShow;
-        const passesAuto =
-            scores.automation >= CONFIG.minimumAutomationToShow;
-        const passesClick =
-            scores.clickbait >= CONFIG.minimumClickbaitToShow;
+        // Score = probabilidade de ser IA/automação/clickbait.
+        // Oculta o card quando ALGUMA dimensão passa do seu teto.
+        // Teto em 1.00 = desligado (nenhum score passa de 1).
+        const hideAI =
+            scores.ai > CONFIG.minimumScoreToShow;
+        const hideAuto =
+            scores.automation > CONFIG.minimumAutomationToShow;
+        const hideClick =
+            scores.clickbait > CONFIG.minimumClickbaitToShow;
 
-        if (!passesAI || !passesAuto || !passesClick) {
+        if (hideAI || hideAuto || hideClick) {
             scanStats.hidden++;
+            card.style.display = "none";
             return;
         }
+
+        // Card passou nos filtros: garante que está visível
+        // (pode ter sido ocultado por uma varredura anterior).
+        card.style.display = "";
 
         const wrapper =
             createBadge(
@@ -928,7 +937,7 @@
 
         const thumbnail =
             card.querySelector(
-                "ytd-thumbnail"
+                "ytd-thumbnail, a#thumbnail, yt-thumbnail-view-model, [class*='thumbnail']"
             );
 
         if (thumbnail) {
@@ -1027,7 +1036,12 @@
                     "ytd-video-renderer",
                     "ytd-grid-video-renderer",
                     "ytd-compact-video-renderer",
-                    "ytd-playlist-video-renderer"
+                    "ytd-playlist-video-renderer",
+                    // Shorts (home, busca, trending e player).
+                    "ytd-reel-item-renderer",
+                    "ytd-reel-video-renderer",
+                    "ytm-shorts-lockup-view-model",
+                    "ytm-shorts-lockup-view-model-v2"
                 ].join(",")
             );
 
@@ -1078,9 +1092,13 @@
             }
         );
 
-    function sliderRow(panel, { key, label, min, max, step }) {
+    function sliderRow(panel, { key, label, min, max, step, percent }) {
         const row = document.createElement("label");
         row.className = "yt-ai-row";
+
+        const format = value => percent
+            ? `${Math.round(Number(value) * 100)}%`
+            : Number(value).toFixed(2);
 
         const head = document.createElement("div");
         head.className = "yt-ai-row-head";
@@ -1090,7 +1108,7 @@
 
         const value = document.createElement("span");
         value.className = "yt-ai-val";
-        value.textContent = Number(CONFIG[key]).toFixed(2);
+        value.textContent = format(CONFIG[key]);
 
         head.appendChild(name);
         head.appendChild(value);
@@ -1105,7 +1123,7 @@
 
         input.addEventListener("input", () => {
             CONFIG[key] = Math.max(min, Math.min(max, Number(input.value)));
-            value.textContent = Number(CONFIG[key]).toFixed(2);
+            value.textContent = format(CONFIG[key]);
             saveSettings();
             clearScoreCache();
             scan();
@@ -1236,9 +1254,9 @@
         panel.appendChild(header);
 
         sectionTitle(panel, "Filtro");
-        sliderRow(panel, { key: "minimumScoreToShow", label: "AI mínima p/ exibir", min: 0, max: 1, step: 0.05 });
-        sliderRow(panel, { key: "minimumAutomationToShow", label: "Automação mínima p/ exibir", min: 0, max: 1, step: 0.05 });
-        sliderRow(panel, { key: "minimumClickbaitToShow", label: "Clickbait mínimo p/ exibir", min: 0, max: 1, step: 0.05 });
+        sliderRow(panel, { key: "minimumScoreToShow", label: "AI Ocultar por Score", min: 0, max: 1, step: 0.05, percent: true });
+        sliderRow(panel, { key: "minimumAutomationToShow", label: "Automação Ocultar por Score", min: 0, max: 1, step: 0.05, percent: true });
+        sliderRow(panel, { key: "minimumClickbaitToShow", label: "Clickbait Ocultar por Score", min: 0, max: 1, step: 0.05, percent: true });
 
         const hiddenLine = document.createElement("div");
         hiddenLine.className = "yt-ai-row-head";
