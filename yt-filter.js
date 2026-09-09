@@ -4,7 +4,7 @@
 // @author       darocaecobr
 // @homepageURL  https://github.com/darocaecobr/lexico-filter
 // @supportURL   https://github.com/darocaecobr/lexico-filter/issues
-// @version      0.5.1
+// @version      0.5.2
 // @description  Adds local heuristic AI/AUTOMATION/CLICKBAIT scores to YouTube video cards using only DOM metadata.
 // @match        https://www.youtube.com/*
 // @updateURL    https://raw.githubusercontent.com/darocaecobr/lexico-filter/refs/heads/main/yt-filter.js
