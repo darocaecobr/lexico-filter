@@ -330,9 +330,29 @@
 
         const value = lower(text);
 
-        return phrases.filter(
-            entry => entry.t && value.includes(entry.t.toLocaleLowerCase())
-        );
+        return phrases.filter(entry => {
+            if (!entry.t) {
+                return false;
+            }
+
+            const term = entry.t.toLocaleLowerCase();
+
+            // Frases: substring. Unigramas curtos exigem fronteira
+            // de palavra (evita "te"⊂"tech", "ele"⊂"elevenlabs").
+            if (term.includes(" ")) {
+                return value.includes(term);
+            }
+
+            try {
+                const esc = term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+                return new RegExp(
+                    `(^|[^\\p{L}\\p{N}_])${esc}(?![\\p{L}\\p{N}_])`,
+                    "u"
+                ).test(value);
+            } catch {
+                return value.includes(term);
+            }
+        });
     }
 
     function updateLexiconStatus() {
@@ -374,7 +394,9 @@
 
         for (const anchor of anchors) {
             try {
-                const url = new URL(anchor.href, location.origin);
+                // anchor.href já é absoluto; sem base para não quebrar
+                // em origens opacas (ex. file://, origin "null").
+                const url = new URL(anchor.href);
                 const id = url.searchParams.get("v");
 
                 if (id) {
