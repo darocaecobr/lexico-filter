@@ -1,9 +1,11 @@
 // ==UserScript==
 // @name         YouTube AI Score — DOM only
 // @namespace    https://local.example/youtube-ai-score
-// @version      0.5.0
+// @version      0.5.1
 // @description  Adds local heuristic AI/AUTOMATION/CLICKBAIT scores to YouTube video cards using only DOM metadata.
 // @match        https://www.youtube.com/*
+// @updateURL    https://raw.githubusercontent.com/darocaecobr/lexico-filter/refs/heads/main/yt-filter.js
+// @downloadURL  https://raw.githubusercontent.com/darocaecobr/lexico-filter/refs/heads/main/yt-filter.js
 // @grant        GM_addStyle
 // @grant        GM_registerMenuCommand
 // @run-at       document-idle
@@ -12,7 +14,7 @@
 (() => {
     "use strict";
 
-    const VERSION = "0.5.0";
+    const VERSION = "0.5.1";
     const STORAGE_KEY = "yt-ai-score-cache-v1";
     const SETTINGS_KEY = "yt-ai-score-settings-v1";
     const LEXICON_CACHE_KEY = "yt-ai-score-lexicon-v1";
@@ -40,9 +42,11 @@
         clickbaitPointsNeeded: 3,
         longTitleLen: 100,
         // Léxicos remotos minerados (data/<kind>_br.json via HTTP)
-        lexiconClickbaitUrl: "",
-        lexiconAiUrl: "",
-        lexiconAutomationUrl: "",
+        // Padrão: repo darocaecobr/lexico-filter (raw do GitHub).
+        lexiconClickbaitUrl: "https://raw.githubusercontent.com/darocaecobr/lexico-filter/refs/heads/main/data/clickbait_br.json",
+        lexiconAiUrl: "https://raw.githubusercontent.com/darocaecobr/lexico-filter/refs/heads/main/data/ai_br.json",
+        lexiconAutomationUrl: "https://raw.githubusercontent.com/darocaecobr/lexico-filter/refs/heads/main/data/automation_br.json",
+        lexiconAutoUpdate: true,
         remoteWeight: 0.50,
         remoteCap: 0.40,
         aiRemoteWeight: 0.50,
@@ -129,6 +133,7 @@
             );
             merged.showAutomation = merged.showAutomation !== false;
             merged.showClickbait = merged.showClickbait !== false;
+            merged.lexiconAutoUpdate = merged.lexiconAutoUpdate !== false;
 
             // URLs dos léxicos remotos (raw do git). Vazias = só embutido.
             // Migra config v0.4 (lexiconUrl único) p/ clickbait.
@@ -1198,20 +1203,21 @@
         intRow(panel, { key: "longTitleLen", label: "Título longo >", min: 40, max: 200, step: 10 });
 
         sectionTitle(panel, "Léxicos remotos (git via HTTP)");
+        checkRow(panel, { key: "lexiconAutoUpdate", label: "Atualizar léxicos ao iniciar" });
         urlRow(panel, {
             key: "lexiconClickbaitUrl",
             label: "URL clickbait (data/clickbait_br.json)",
-            placeholder: "https://raw.githubusercontent.com/.../clickbait_br.json",
+            placeholder: "https://raw.githubusercontent.com/darocaecobr/lexico-filter/refs/heads/main/data/clickbait_br.json",
         });
         urlRow(panel, {
             key: "lexiconAiUrl",
             label: "URL IA (data/ai_br.json)",
-            placeholder: "https://raw.githubusercontent.com/.../ai_br.json",
+            placeholder: "https://raw.githubusercontent.com/darocaecobr/lexico-filter/refs/heads/main/data/ai_br.json",
         });
         urlRow(panel, {
             key: "lexiconAutomationUrl",
             label: "URL automação (data/automation_br.json)",
-            placeholder: "https://raw.githubusercontent.com/.../automation_br.json",
+            placeholder: "https://raw.githubusercontent.com/darocaecobr/lexico-filter/refs/heads/main/data/automation_br.json",
         });
         sliderRow(panel, { key: "remoteWeight", label: "Peso léxico clickbait", min: 0, max: 1, step: 0.05 });
         sliderRow(panel, { key: "remoteCap", label: "Teto léxico clickbait", min: 0, max: 1, step: 0.05 });
@@ -1276,7 +1282,7 @@
 
         const hint = document.createElement("div");
         hint.className = "yt-ai-hint";
-        hint.textContent = "Léxicos BR: data/{clickbait,ai,automation}_br.json (scripts/mine_br_lexicon.py --kind ...). Cole as URLs raw do git acima e clique Recarregar. Mudanças limpam o cache e reavaliam os cards.";
+        hint.textContent = "Léxicos BR: data/{clickbait,ai,automation}_br.json (scripts/mine_br_lexicon.py --kind ...). URLs padrão: darocaecobr/lexico-filter (raw). Use Recarregar após editar. Mudanças limpam o cache e reavaliam os cards.";
         panel.appendChild(hint);
 
         document.body.appendChild(panel);
@@ -1583,7 +1589,8 @@
         loadLexiconCache();
         scan();
 
-        if (CONFIG.lexiconClickbaitUrl || CONFIG.lexiconAiUrl || CONFIG.lexiconAutomationUrl) {
+        if (CONFIG.lexiconAutoUpdate &&
+            (CONFIG.lexiconClickbaitUrl || CONFIG.lexiconAiUrl || CONFIG.lexiconAutomationUrl)) {
             fetchRemoteLexicons();
         }
 

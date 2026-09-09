@@ -24,12 +24,24 @@ Agarwal/SEPS, CollATe).
 
 ## Léxico via HTTP (git)
 
-1. Suba o repo p/ o GitHub com `data/*_br.json` commitados.
-2. No painel do script (botão `AI ⚙` no YouTube), cole em cada URL:
-   `https://raw.githubusercontent.com/<user>/<repo>/main/data/<kind>_br.json`
+1. Suba o repo p/ o GitHub com `data/*_br.json` commitados
+   (o padrão já aponta para `darocaecobr/lexico-filter`).
+2. No painel do script (botão `AI ⚙` no YouTube), confira cada URL:
+   `https://raw.githubusercontent.com/darocaecobr/lexico-filter/refs/heads/main/data/<kind>_br.json`
+   (troque pelo seu fork, se for o caso).
 3. Clique **Recarregar léxicos**. O JSON fica em cache (`localStorage`) p/ uso offline;
    sem URL, o script usa só o léxico embutido. `raw.githubusercontent.com` libera CORS (`*`),
    então `fetch()` direto funciona sem `@grant` extra.
+
+## Updates
+
+- **Script**: `yt-filter.js` declara `@updateURL`/`@downloadURL` para
+  `darocaecobr/lexico-filter` — o Tampermonkey verifica e oferece a nova versão
+  sozinho (basta subir o arquivo com `@version` maior). Reinstale a partir da URL
+  raw uma vez para o TM registrar a origem de update.
+- **Léxicos**: com **Atualizar léxicos ao iniciar** ligado (padrão), o script baixa
+  os 3 JSONs a cada abertura do YouTube; desligado, usa o cache e só atualiza no
+  botão **Recarregar léxicos**.
 
 ## Créditos das pesquisas
 
