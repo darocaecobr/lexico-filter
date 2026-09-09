@@ -4,7 +4,7 @@
 // @author       darocaecobr
 // @homepageURL  https://github.com/darocaecobr/lexico-filter
 // @supportURL   https://github.com/darocaecobr/lexico-filter/issues
-// @version      0.6.1
+// @version      0.6.2
 // @description  Adds local heuristic AI/AUTOMATION/CLICKBAIT scores to YouTube video cards using only DOM metadata.
 // @match        https://www.youtube.com/*
 // @updateURL    https://raw.githubusercontent.com/darocaecobr/lexico-filter/refs/heads/main/yt-filter.js
@@ -17,7 +17,7 @@
 (() => {
     "use strict";
 
-    const VERSION = "0.6.1";
+    const VERSION = "0.6.2";
     const STORAGE_KEY = "yt-ai-score-cache-v2";
     const SETTINGS_KEY = "yt-ai-score-settings-v2";
     const LEXICON_CACHE_KEY = "yt-ai-score-lexicon-v1";
@@ -1409,7 +1409,7 @@
             "yt-ai-score-settings";
 
         button.type = "button";
-        button.textContent = "AI ⚙";
+        button.textContent = "YTAI ⚙";
         button.title = "Editar thresholds (YT AI Score)";
 
         const toggle = (event) => {
